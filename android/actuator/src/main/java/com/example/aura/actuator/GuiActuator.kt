@@ -14,10 +14,18 @@ class GuiActuator(
             return@withContext "Action requires confirmation: $description"
         }
 
+        if (!AuraAccessibilityService.isRunning()) {
+            AuraAccessibilityService.ensureConfigured(context)
+            return@withContext "Accessibility service unavailable. Enable Aura in Settings > Accessibility to continue."
+        }
+
         val command = buildCommand(payload)
-        Log.d(TAG, "Executing command=$command for description=$description")
-        // TODO: hook into AccessibilityService performAction / GestureDescription
-        "Executed: $description"
+        Log.d(TAG, "Dispatching command=$command for description=$description")
+        return@withContext if (AuraAccessibilityService.submitCommand(command)) {
+            "Executed: $description"
+        } else {
+            "Unable to execute: actuator queue is busy. Confirm Accessibility permission and retry."
+        }
     }
 
     private fun buildCommand(payload: Map<String, Any?>): InputCommand {

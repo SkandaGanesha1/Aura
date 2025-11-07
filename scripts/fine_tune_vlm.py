@@ -37,12 +37,23 @@ except ImportError as exc:  # pragma: no cover
     raise SystemExit("peft is required. Install with `pip install peft`.") from exc
 
 logger = logging.getLogger("aura.fine_tune_vlm")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_TRAIN_FILE = REPO_ROOT / "data/processed/vlm_training/examples.jsonl"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fine-tune Aura perception VLM.")
-    parser.add_argument("--base-model", default="Salesforce/blip-image-captioning-base")
-    parser.add_argument("--train-file", type=Path, required=True)
+    parser.add_argument(
+        "--base-model",
+        default="defog/smol-vlm-7b",
+        help="Base VLM id/path (default: defog/smol-vlm-7b for on-device ExecuTorch export).",
+    )
+    parser.add_argument(
+        "--train-file",
+        type=Path,
+        default=DEFAULT_TRAIN_FILE,
+        help=f"VLM training JSONL (default: {DEFAULT_TRAIN_FILE}).",
+    )
     parser.add_argument("--eval-file", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--num-epochs", type=int, default=3)

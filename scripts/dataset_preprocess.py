@@ -14,6 +14,15 @@ Usage:
         --raw-dir ../data/raw/aitw \
         --output-dir ../data/processed \
         --min-instruction-length 5
+
+Expected directory layout:
+    data/
+      raw/
+        aitw/           # Android In The Wild episodes
+        androidarena/   # AndroidArena (A3) episodes
+      processed/
+        slm_training/episodes.jsonl
+        vlm_training/examples.jsonl
 """
 
 from __future__ import annotations
@@ -294,7 +303,12 @@ def write_splits(processed_dir: Path, train_ratio: float, val_ratio: float) -> N
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Prepare Aura datasets.")
     parser.add_argument("--dataset", choices={"aitw", "androidarena", "custom"}, default="aitw")
-    parser.add_argument("--raw-dir", type=Path, required=True, help="Directory containing raw dataset files.")
+    parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        required=True,
+        help="Root directory for raw episodes (e.g. data/raw/aitw or data/raw/androidarena).",
+    )
     parser.add_argument("--output-dir", type=Path, required=True, help="Destination for processed artifacts.")
     parser.add_argument("--min-instruction-length", type=int, default=4, help="Filter short instructions.")
     parser.add_argument("--vlm-questions-per-episode", type=int, default=4, help="Number of perception QA samples per episode.")

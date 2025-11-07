@@ -6,7 +6,6 @@ Example usage:
     python export_to_executorch.py \
         --model-type slm \
         --checkpoint ../models/slm/aura-planner \
-        --tokenizer meta-llama/Llama-3.2-1B-Instruct \
         --output-dir ../models/compiled/slm
 """
 
@@ -33,7 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export an Aura model to ExecuTorch format.")
     parser.add_argument("--model-type", choices={"slm", "vlm"}, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True, help="Path to fine-tuned model directory or file.")
-    parser.add_argument("--tokenizer", help="Tokenizer id/path (required for SLM).")
+    parser.add_argument(
+        "--tokenizer",
+        default="meta-llama/Llama-3.2-1B-Instruct",
+        help="Tokenizer id/path for planner exports (default: meta-llama/Llama-3.2-1B-Instruct).",
+    )
     parser.add_argument("--example-prompt", default="Summarise this conversation.")
     parser.add_argument("--example-question", default="Where is the submit button?")
     parser.add_argument("--image-path", type=Path, help="Optional example image for VLM export.")
@@ -76,11 +79,9 @@ def main() -> None:
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="[%(levelname)s] %(message)s")
 
-    if args.model_type == "slm" and not args.tokenizer:
-        raise SystemExit("--tokenizer is required when exporting the planner SLM.")
-
     if args.model_type == "slm":
-        model, example_inputs = load_slm_model(args.checkpoint, args.tokenizer)
+        tokenizer_id = args.tokenizer or "meta-llama/Llama-3.2-1B-Instruct"
+        model, example_inputs = load_slm_model(args.checkpoint, tokenizer_id)
     else:
         model, example_inputs = load_vlm_model(args.checkpoint, args.example_question, args.image_path)
 

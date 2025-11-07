@@ -38,11 +38,13 @@ pip install -r requirements.txt
 ```
 
 ### 2. Datasets
-- Download **Android In The Wild (AITW)**, **Android Arena (A3)**, and optional **MoTIF/DroidTask** datasets into `data/raw/`.
-- Use `scripts/dataset_preprocess.py` to generate processed training corpora into `data/processed/` and create splits.
-- Record app-specific trajectories using the `Teach Mode` recorder (see `docs/data_strategy.md` for seven-step workflow).
+- Download **Android In The Wild (AITW)** into `data/raw/aitw` and **Android Arena (A3)** into `data/raw/androidarena`. Each episode directory should contain `metadata.json`, `view_hierarchy.json`, `actions.json`, and at least one screenshot (`screenshot.png`).
+- Run `scripts/dataset_preprocess.py --raw-dir data/raw/<dataset>` to normalise the data. The script writes planner data to `data/processed/slm_training/episodes.jsonl` and perception data to `data/processed/vlm_training/examples.jsonl`.
+- Record app-specific trajectories using the `Teach Mode` recorder (see `docs/data_strategy.md` for the seven-step workflow) to augment the public datasets when needed.
 
 ### 3. Fine-Tune Models
+The provided scripts default to the proposal's recommended on-device models: `meta-llama/Llama-3.2-1B-Instruct` for the planner SLM and `defog/smol-vlm-7b` for the VLM fallback. Override the `--base-model` flag if you need a different checkpoint (e.g., experiments with Llama-3.2-3B or Gemini Nano when available).
+
 ```bash
 # Intent planner SLM
 python scripts/fine_tune_slm.py --config configs/slm_default.yaml
@@ -62,7 +64,7 @@ python scripts/export_to_executorch.py \
 
 bash scripts/build_mobile_models.sh
 ```
-Exports create `.pte` packages for ExecuTorch, along with manifest YAML files describing tensor formats and delegate preferences.
+Exports create `.pte` packages for ExecuTorch, along with manifest YAML files describing tensor formats and delegate preferences. When exporting planner models you can omit `--tokenizer`; the script automatically falls back to `meta-llama/Llama-3.2-1B-Instruct`.
 
 ### 5. Build Android App
 1. Open `android/` in Android Studio.

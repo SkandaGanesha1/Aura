@@ -46,12 +46,23 @@ except ImportError as exc:  # pragma: no cover - handled at runtime
     raise SystemExit("peft is required. Install with `pip install peft`.") from exc
 
 logger = logging.getLogger("aura.fine_tune_slm")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_TRAIN_FILE = REPO_ROOT / "data/processed/slm_training/episodes.jsonl"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fine-tune the Aura planner SLM.")
-    parser.add_argument("--base-model", required=True, help="Base HF model id or local path.")
-    parser.add_argument("--train-file", type=Path, required=True, help="Path to JSONL training file.")
+    parser.add_argument(
+        "--base-model",
+        default="meta-llama/Llama-3.2-1B-Instruct",
+        help="Base HF model id or local path (default: meta-llama/Llama-3.2-1B-Instruct).",
+    )
+    parser.add_argument(
+        "--train-file",
+        type=Path,
+        default=DEFAULT_TRAIN_FILE,
+        help=f"Path to JSONL training file (default: {DEFAULT_TRAIN_FILE}).",
+    )
     parser.add_argument("--eval-file", type=Path, help="Optional evaluation JSONL file.")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--num-epochs", type=int, default=3)

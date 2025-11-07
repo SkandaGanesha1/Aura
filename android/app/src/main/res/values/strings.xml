@@ -5,4 +5,5 @@
     <string name="execute_button">Execute Plan</string>
     <string name="status_placeholder">Status updates will appear here.</string>
     <string name="intent_missing">Please describe the task you want Aura to perform.</string>
+    <string name="a11y_service_desc">Aura uses this service to perform secure taps, swipes, and text entry when you approve an action.</string>
 </resources>
