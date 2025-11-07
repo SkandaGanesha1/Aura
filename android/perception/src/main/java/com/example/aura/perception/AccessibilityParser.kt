@@ -27,7 +27,14 @@ object AccessibilityParser {
         )
         sink += element
         for (i in 0 until node.childCount) {
-            traverse(node.getChild(i), sink, depth + 1)
+            val child = node.getChild(i)
+            if (child != null) {
+                try {
+                    traverse(child, sink, depth + 1)
+                } finally {
+                    child.recycle()
+                }
+            }
         }
     }
 
