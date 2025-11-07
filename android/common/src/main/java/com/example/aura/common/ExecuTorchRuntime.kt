@@ -1,6 +1,7 @@
 package com.example.aura.common
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.util.Log
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,15 +29,47 @@ object ExecuTorchRuntime {
     fun getModelDirectory(): File = modelDirectory
 
     private fun copyAssetsIfNeeded(context: Context) {
-        val assets = context.assets.list("models") ?: return
+        val assetManager = context.assets
+        val assets = assetManager.list("models") ?: return
         for (asset in assets) {
-            context.assets.open("models/$asset").use { input ->
-                val target = File(modelDirectory, asset)
-                if (target.exists()) continue
-                target.outputStream().use { output ->
+            val assetPath = "models/$asset"
+            val target = File(modelDirectory, asset)
+            val children = assetManager.list(assetPath)
+            if (children != null && children.isNotEmpty()) {
+                target.mkdirs()
+                copyAssetDirectory(assetManager, assetPath, target)
+            } else {
+                copyAssetFile(assetManager, assetPath, target)
+            }
+        }
+    }
+
+    private fun copyAssetDirectory(assetManager: AssetManager, assetPath: String, targetDir: File) {
+        val assets = assetManager.list(assetPath) ?: return
+        for (asset in assets) {
+            val childAssetPath = "$assetPath/$asset"
+            val childTarget = File(targetDir, asset)
+            val children = assetManager.list(childAssetPath)
+            if (children != null && children.isNotEmpty()) {
+                childTarget.mkdirs()
+                copyAssetDirectory(assetManager, childAssetPath, childTarget)
+            } else {
+                copyAssetFile(assetManager, childAssetPath, childTarget)
+            }
+        }
+    }
+
+    private fun copyAssetFile(assetManager: AssetManager, assetPath: String, targetFile: File) {
+        if (targetFile.exists()) return
+        targetFile.parentFile?.mkdirs()
+        try {
+            assetManager.open(assetPath).use { input ->
+                targetFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to copy asset $assetPath", exception)
         }
     }
 
