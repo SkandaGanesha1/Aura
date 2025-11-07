@@ -150,6 +150,8 @@ def parse_episode(directory: Path) -> Episode:
 
 
 def discover_episodes(raw_dir: Path) -> Iterable[Episode]:
+    seen_directories: set[Path] = set()
+
     for path in sorted(raw_dir.rglob("episode.json")):
         # Some datasets use a single JSON file per episode
         data = load_json(path)
@@ -160,6 +162,11 @@ def discover_episodes(raw_dir: Path) -> Iterable[Episode]:
             hierarchy_path = path
             episode_dir = path.parent
 
+        resolved_dir = episode_dir.resolve()
+        if resolved_dir in seen_directories:
+            continue
+        seen_directories.add(resolved_dir)
+
         try:
             yield parse_episode(episode_dir)
         except (ValueError, FileNotFoundError) as exc:
@@ -168,6 +175,8 @@ def discover_episodes(raw_dir: Path) -> Iterable[Episode]:
     # Fallback: assume each subdirectory is an episode
     for directory in raw_dir.iterdir():
         if directory.is_dir():
+            if directory.resolve() in seen_directories:
+                continue
             try:
                 yield parse_episode(directory)
             except (ValueError, FileNotFoundError):
