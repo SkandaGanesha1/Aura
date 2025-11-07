@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aura</string>
+    <string name="intent_hint">Ask Aura to complete a task…</string>
+    <string name="execute_button">Execute Plan</string>
+    <string name="status_placeholder">Status updates will appear here.</string>
+    <string name="intent_missing">Please describe the task you want Aura to perform.</string>
+</resources>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="perception_service_description">Aura perception service reads the UI hierarchy to understand the screen context.</string>
+</resources>
