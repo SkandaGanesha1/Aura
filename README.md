@@ -39,11 +39,12 @@ pip install -r requirements.txt
 
 ### 2. Datasets
 - Download **Android In The Wild (AITW)** into `data/raw/aitw` and **Android Arena (A3)** into `data/raw/androidarena`. Each episode directory should contain `metadata.json`, `view_hierarchy.json`, `actions.json`, and at least one screenshot (`screenshot.png`).
-- Run `scripts/dataset_preprocess.py --raw-dir data/raw/<dataset>` to normalise the data. The script writes planner data to `data/processed/slm_training/episodes.jsonl` and perception data to `data/processed/vlm_training/examples.jsonl`.
+- Optionally add **DroidTask** (`data/raw/droidtask`) and **MoTiF** (`data/raw/motif`) to cover additional benchmark tasks referenced in the proposal.
+- Run `scripts/dataset_preprocess.py --dataset <aitw|androidarena|droidtask|motif> --raw-dir data/raw/<dataset>` to normalise the data. The script writes planner data to `data/processed/slm_training/episodes.jsonl` and perception data to `data/processed/vlm_training/examples.jsonl`. See `data/README.md` for a full walkthrough.
 - Record app-specific trajectories using the `Teach Mode` recorder (see `docs/data_strategy.md` for the seven-step workflow) to augment the public datasets when needed.
 
 ### 3. Fine-Tune Models
-The provided scripts default to the proposal's recommended on-device models: `meta-llama/Llama-3.2-1B-Instruct` for the planner SLM and `defog/smol-vlm-7b` for the VLM fallback. Override the `--base-model` flag if you need a different checkpoint (e.g., experiments with Llama-3.2-3B or Gemini Nano when available).
+The provided scripts default to the proposal's recommended on-device models: `meta-llama/Llama-3.2-1B-Instruct` (quantised for ExecuTorch/KleidiAI) for the planner SLM and `defog/smol-vlm-2b` for the VLM fallback. Override the `--base-model` flag if you need a different checkpoint (e.g., Llama-3.2-3B or Gemini Nano when the AI Edge SDK is available on your target device).
 
 ```bash
 # Intent planner SLM
@@ -59,12 +60,21 @@ python scripts/quantize_prune.py --model-path models/slm/latest.pt
 ### 4. Export to ExecuTorch
 ```bash
 python scripts/export_to_executorch.py \
-  --model-path models/slm/quantized/aura_slm_int8.pt \
-  --output-dir models/compiled/slm
+  --model-type slm \
+  --checkpoint models/slm/aura-planner \
+  --target planner \
+  --quantize \
+  --output-dir models/compiled/android
+
+python scripts/export_to_executorch.py \
+  --model-type vlm \
+  --checkpoint models/vlm/aura-vision \
+  --target perception \
+  --output-dir models/compiled/android
 
 bash scripts/build_mobile_models.sh
 ```
-Exports create `.pte` packages for ExecuTorch, along with manifest YAML files describing tensor formats and delegate preferences. When exporting planner models you can omit `--tokenizer`; the script automatically falls back to `meta-llama/Llama-3.2-1B-Instruct`.
+Exports create `.pte` packages for ExecuTorch, along with manifest files describing tensor formats, quantization state, and target delegates. Planner exports default to the Llama 3.2 tokenizer when `--tokenizer` is omitted and land under `models/compiled/android/planner/`, while perception exports target `models/compiled/android/perception/`.
 
 ### 5. Build Android App
 1. Open `android/` in Android Studio.
@@ -75,7 +85,7 @@ Exports create `.pte` packages for ExecuTorch, along with manifest YAML files de
 ### 6. Cross-Device Demo (Optional)
 1. Build the `desktop/` companion (Kotlin Multiplatform or JVM).
 2. Start the desktop listener: `./gradlew :desktop:run`.
-3. On the phone, issue a task better suited for larger screens (e.g., “Draft Q3 board report from this sheet”); Aura will offer to transfer the session.
+3. On the phone, issue a task better suited for larger screens (e.g., “Draft Q3 board report from this sheet”). Aura will query nearby devices through the Cross-Device SDK bridge and offer to transfer the session when a companion device is available.
 
 ## Synthetic Teach Mode
 During hackathons, reliably demoing multi-app workflows demands targeted data. Aura includes a synthetic data pipeline:

@@ -39,14 +39,18 @@ except ImportError as exc:  # pragma: no cover
 logger = logging.getLogger("aura.fine_tune_vlm")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TRAIN_FILE = REPO_ROOT / "data/processed/vlm_training/examples.jsonl"
+DEFAULT_VLM_MODEL = "defog/smol-vlm-2b"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fine-tune Aura perception VLM.")
     parser.add_argument(
         "--base-model",
-        default="defog/smol-vlm-7b",
-        help="Base VLM id/path (default: defog/smol-vlm-7b for on-device ExecuTorch export).",
+        default=DEFAULT_VLM_MODEL,
+        help=(
+            "Vision-language model id/path (default: defog/smol-vlm-2b). "
+            "Other suggested option: google/gemini-nano-2 for AI Edge SDK devices."
+        ),
     )
     parser.add_argument(
         "--train-file",

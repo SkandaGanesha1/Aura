@@ -1,7 +1,6 @@
 package com.example.aura.perception
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.view.accessibility.AccessibilityManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,18 +17,26 @@ class PerceptionGateway(
             return@withContext "Accessibility service is not enabled. Cannot perceive UI for intent: $intent"
         }
 
-        // In a full implementation we would access the current window's root node.
-        val elements = AccessibilityParser.describe(null)
-        if (elements.isEmpty()) {
-            "Aura perception ready (no nodes parsed yet) for intent: $intent"
-        } else {
-            elements.joinToString(prefix = "Top UI elements:\n", separator = "\n") { element ->
-                "- ${element.text.ifBlank { element.contentDescription }} @ ${element.bounds}"
+        val rootNode = PerceptionService.snapshotRoot()
+        val elements = rootNode?.let { node ->
+            try {
+                AccessibilityParser.describe(node)
+            } finally {
+                node.recycle()
             }
+        } ?: emptyList()
+        if (elements.isEmpty()) {
+            "Unable to capture UI tree yet. Ensure Aura's perception service is enabled for intent: $intent"
+        } else {
+            val summary = elements.take(5).joinToString(separator = "\n") { element ->
+                "- ${element.text.ifBlank { element.contentDescription.ifBlank { element.className } }} @ ${element.bounds}"
+            }
+            "Top UI elements:\n$summary"
         }
     }
 
-    suspend fun answerWithVision(bitmap: Bitmap, question: String): String {
-        return visionFallback.answerQuestion(bitmap, question)
+    suspend fun answerWithVision(question: String): String = withContext(Dispatchers.Default) {
+        val screenshot = ScreenshotUtils.captureWindow(context)
+        visionFallback.answerQuestion(screenshot, question)
     }
 }

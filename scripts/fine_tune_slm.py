@@ -11,7 +11,8 @@ The script expects JSONL input where each line contains:
 }
 
 Training strategy:
-    * Load an INT8-capable base model (e.g., "meta-llama/Llama-3.2-1B-Instruct").
+    * Load an INT8-capable base model (e.g., "meta-llama/Llama-3.2-1B-Instruct" or "-3B-Instruct").
+    * Optionally swap in "google/gemini-nano-2" when targeting devices with the Android AI Edge SDK.
     * Apply QLoRA adapters for low-memory fine-tuning.
     * Optimise with standard causal LM objective using HuggingFace Trainer.
 
@@ -48,14 +49,18 @@ except ImportError as exc:  # pragma: no cover - handled at runtime
 logger = logging.getLogger("aura.fine_tune_slm")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TRAIN_FILE = REPO_ROOT / "data/processed/slm_training/episodes.jsonl"
+DEFAULT_SLM_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fine-tune the Aura planner SLM.")
     parser.add_argument(
         "--base-model",
-        default="meta-llama/Llama-3.2-1B-Instruct",
-        help="Base HF model id or local path (default: meta-llama/Llama-3.2-1B-Instruct).",
+        default=DEFAULT_SLM_MODEL,
+        help=(
+            "Base planner model (default: meta-llama/Llama-3.2-1B-Instruct). "
+            "Other suggested options: meta-llama/Llama-3.2-3B-Instruct or google/gemini-nano-2."
+        ),
     )
     parser.add_argument(
         "--train-file",

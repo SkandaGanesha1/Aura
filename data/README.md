@@ -12,6 +12,10 @@ Aura's training pipelines expect the canonical Android UI datasets referenced in
 2. Extract into `data/raw/androidarena`.
 3. The directory layout mirrors AITW, so the same preprocessing script can parse it.
 
+## Optional Benchmarks
+- **DroidTask** – extract to `data/raw/droidtask` (158 tasks across 13 apps).
+- **MoTiF** – extract to `data/raw/motif` (>4.7k multi-step UI tasks).
+
 ## Processed Outputs
 Run:
 ```bash

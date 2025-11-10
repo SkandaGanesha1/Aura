@@ -4,8 +4,10 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.graphics.Path
+import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -74,8 +76,18 @@ class AuraAccessibilityService : AccessibilityService() {
     }
 
     private fun performTextInput(text: String) {
-        // This is a placeholder: production builds should integrate with an IME or autofill service.
-        Log.i(TAG, "Text input requested: $text (implement IME injection as needed).")
+        val node = rootInActiveWindow ?: run {
+            Log.w(TAG, "No active window for text input.")
+            return
+        }
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
+        val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        if (!success) {
+            Log.w(TAG, "Failed to inject text. Consider requesting focus on the target field.")
+        }
+        node.recycle()
     }
 
     companion object {

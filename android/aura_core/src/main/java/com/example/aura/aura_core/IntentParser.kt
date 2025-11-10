@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 
 /**
  * Wrapper responsible for invoking the planner SLM compiled with ExecuTorch.
@@ -20,21 +19,33 @@ class IntentParser(
 ) {
 
     suspend fun plan(intent: String): TaskGraph = withContext(Dispatchers.Default) {
-        loadCompiledModel()?.let {
-            runOnDevicePlanner(intent, it)
+        loadCompiledPlanner()?.let { module ->
+            runOnDevicePlanner(intent, module)
         } ?: heuristicPlan(intent)
     }
 
-    private fun loadCompiledModel(): File? {
+    @Volatile
+    private var cachedPlanner: ExecuTorchRuntime.PlannerModule? = null
+
+    private fun loadCompiledPlanner(): ExecuTorchRuntime.PlannerModule? {
+        cachedPlanner?.let { return it }
         val directory = ExecuTorchRuntime.getModelDirectory()
         val candidate = File(directory, "planner/model.pte")
-        return candidate.takeIf { it.exists() }
+        val module = ExecuTorchRuntime.loadPlannerModule(candidate)
+        cachedPlanner = module
+        return module
     }
 
-    private fun runOnDevicePlanner(intent: String, modelFile: File): TaskGraph {
-        // TODO: integrate ExecuTorch runtime once available. We emit a stub for now.
-        Log.d(TAG, "Planner model located at: ${modelFile.absolutePath}")
-        return heuristicPlan(intent)
+    private fun runOnDevicePlanner(intent: String, module: ExecuTorchRuntime.PlannerModule): TaskGraph {
+        Log.d(TAG, "Executing planner intent via ExecuTorch module.")
+        val actions = module.plan(intent)
+        if (actions.isEmpty()) {
+            return heuristicPlan(intent)
+        }
+        val steps = actions.map { action ->
+            TaskStep(agent = action.agent, description = action.description, payload = emptyMap())
+        }
+        return TaskGraph(intent = intent, steps = steps)
     }
 
     private fun heuristicPlan(intent: String): TaskGraph {
