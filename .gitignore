@@ -1,2 +1,3 @@
 models/compiled/planner/model.pte
 models/quantized/qwen05b_int8.pte
+android/app/src/main/assets/models/planner/model.pte
